@@ -1,38 +1,55 @@
-import cv2 as cv
+import cv2
 
-capture = cv.VideoCapture("C:\\Users\\Elvin's\\Desktop\\Videos\\m2-res_1920p.mp4")
-img = cv.imread("C:\\Users\\Elvin's\\Desktop\\Image\\download.jfif")
+def main():
+    # Specify the path to your video file
+    video_path = r'C:\Users\Elvin Mentor\Desktop\Image Processing\Video files\car.mp4'
 
-def rescaleFrame(frame,scale=0.5 ):
+    # Initialize video capture with the video file
+    cap = cv2.VideoCapture(video_path)
 
-    width = int(frame.shape[1] * scale)
-    height = int(frame.shape[0] * scale)
+    # Check if the video was opened successfully
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        return
 
-    dimension = (width,height)
+    # Read the first frame
+    ret, frame = cap.read()
+    if not ret:
+        print("Failed to read video")
+        return
 
-    return cv.resize(frame,dimension, interpolation=cv.INTER_AREA)
+    # Select the object to track
+    bbox = cv2.selectROI("Frame", frame, False)
+    cv2.destroyAllWindows()
 
-def changeRes(width,height):
-    capture.set(3,width)
-    capture.set(4,height)
+    # Initialize the tracker
+    tracker = cv2.TrackerCSRT_create()
+    tracker.init(frame, bbox)
 
+    # Track object in the video
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
+        # Update the tracker
+        success, bbox = tracker.update(frame)
 
-while True:
-    isframe,frame = capture.read()
-    frame_resized = rescaleFrame(frame)
+        # Draw bounding box if tracking is successful
+        if success:
+            x, y, w, h = [int(v) for v in bbox]
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2, 1)
+        else:
+            cv2.putText(frame, "Tracking failure detected", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
-    cv.imshow('Video_resized',frame_resized)
+        # Display the frame with the bounding box
+        cv2.imshow("Tracking", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to quit
+            break
 
-    if cv.waitKey(20) & 0xFF ==ord('d'):
-        break
+    # Release resources
+    cap.release()
+    cv2.destroyAllWindows()
 
-capture.release()
-cv.destroyAllWindows()
-
-
-#
-#
-# resized_image = rescaleFrame(img)
-# cv.imshow('Image',resized_image)
-# cv.waitKey(0)
+if __name__ == "__main__":
+    main()
